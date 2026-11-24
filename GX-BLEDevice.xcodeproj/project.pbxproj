@@ -25,6 +25,7 @@
 		A10000000000000000000110 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1000000000000000000021B /* ImageIO.framework */; };
 		A10000000000000000000111 /* BKUDPCommandManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000021C /* BKUDPCommandManager.m */; };
 		A10000000000000000000112 /* BKUDPCommandPacket.c in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000021E /* BKUDPCommandPacket.c */; };
+		A10000000000000000000113 /* LocalNetworkPrivacy.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000220 /* LocalNetworkPrivacy.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -59,6 +60,8 @@
 		A1000000000000000000021D /* BKUDPCommandManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BKUDPCommandManager.h; sourceTree = "<group>"; };
 		A1000000000000000000021E /* BKUDPCommandPacket.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BKUDPCommandPacket.c; sourceTree = "<group>"; };
 		A1000000000000000000021F /* BKUDPCommandPacket.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BKUDPCommandPacket.h; sourceTree = "<group>"; };
+		A10000000000000000000220 /* LocalNetworkPrivacy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LocalNetworkPrivacy.m; sourceTree = "<group>"; };
+		A10000000000000000000221 /* LocalNetworkPrivacy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LocalNetworkPrivacy.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -127,6 +130,8 @@
 			children = (
 				A10000000000000000000209 /* GXWiFiConnector.h */,
 				A10000000000000000000208 /* GXWiFiConnector.m */,
+				A10000000000000000000221 /* LocalNetworkPrivacy.h */,
+				A10000000000000000000220 /* LocalNetworkPrivacy.m */,
 			);
 			path = WiFi;
 			sourceTree = "<group>";
@@ -296,6 +301,7 @@
 				A1000000000000000000010F /* GXImagePreviewViewController.m in Sources */,
 				A10000000000000000000111 /* BKUDPCommandManager.m in Sources */,
 				A10000000000000000000112 /* BKUDPCommandPacket.c in Sources */,
+				A10000000000000000000113 /* LocalNetworkPrivacy.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

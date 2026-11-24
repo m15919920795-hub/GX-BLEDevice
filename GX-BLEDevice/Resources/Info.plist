@@ -24,6 +24,10 @@
     <true/>
     <key>NSBluetoothAlwaysUsageDescription</key>
     <string>用于搜索附近的 FPV 设备并读取其 Wi-Fi 名称。</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_lnp._tcp.</string>
+    </array>
     <key>NSLocalNetworkUsageDescription</key>
     <string>用于通过设备的 Wi-Fi 接收并显示实时图像。</string>
     <key>UIApplicationSceneManifest</key>

@@ -6,7 +6,7 @@
 
 1. 在 Xcode 打开 `GX-BLEDevice.xcodeproj`，等待软件包解析完成。工程通过 Swift Package Manager 依赖 CocoaAsyncSocket 7.6.5。
 2. 在 GX-BLEDevice target 的 Signing & Capabilities 中选择自己的 Apple Developer Team。如有签名冲突，改用该团队下可用的唯一 Bundle Identifier。签名需要包含 Hotspot Configuration 和 Access Wi-Fi Information。
-3. 选择 iPhone 真机运行。打开设备电源，点击「搜索并连接」，按 iOS 提示确认加入 Wi-Fi。
+3. 选择 iPhone 真机运行。首次打开时，App 会尝试通过临时 Bonjour 服务触发本地网络权限提示。打开设备电源，点击「搜索并连接」，按 iOS 提示确认加入 Wi-Fi。
 
 ## 连接流程
 
@@ -15,7 +15,7 @@
 1. 首页和「搜索并连接」先读取当前 Wi-Fi 的 IPv4 网关。如果是 `192.168.18.1`，首页提供「查看图像」入口。点击「搜索并连接」会直接打开预览。
 2. 未连接设备时，`GXBLEScanner` 扫描约 3 秒，把以 `FPV-Drone-` 开头的完整 BLE 广播 Local Name 作为 SSID。按设备累计有效 RSSI，以中位数最高的设备为目标。蓝牙关闭与 App 无蓝牙权限分别提示。
 3. `GXWiFiConnector` 用完整 SSID 申请临时加入开放热点。收到系统回调后，最多等 10 秒让路由更新到设备网关，确认后直接打开预览。连接面向前台使用，锁屏、退出 App 或切换网络时，iOS 可能终止这次临时连接。
-4. 手动点「查看图像」时会重新核对网关。进入预览后，通过 UDP 7080 获取图像 Key，再由 `BKUDPImageManager` 通过 UDP 7070 接收 JPEG。首次进入时按系统提示允许本地网络访问。
+4. 手动点「查看图像」时会重新核对网关。进入预览后，通过 UDP 7080 获取图像 Key，再由 `BKUDPImageManager` 通过 UDP 7070 接收 JPEG。如果首次打开 App 时未出现本地网络提示，按 iOS 在首次网络访问时显示的提示授权。
 
 ## UDP 指令
 
