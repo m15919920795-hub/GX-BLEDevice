@@ -77,6 +77,7 @@ static UIImage * _Nullable BKDecodeJPEG(NSData *data) {
 @property (nonatomic, strong, nullable) GCDAsyncUdpSocket *socket;
 @property (nonatomic, strong, nullable) NSData *peerAddress;
 @property (nonatomic) in_addr_t peerIPv4;
+@property (nonatomic) uint8_t w32Key;
 @property (nonatomic, strong, nullable) NSMutableData *frameData;
 @property (nonatomic, strong, nullable) NSData *pendingJPEG;
 @property (nonatomic) BOOL decodingFrame;
@@ -98,6 +99,10 @@ static UIImage * _Nullable BKDecodeJPEG(NSData *data) {
 }
 
 - (void)startReceivingFromHost:(NSString *)host {
+    [self startReceivingFromHost:host w32Key:0];
+}
+
+- (void)startReceivingFromHost:(NSString *)host w32Key:(uint8_t)w32Key {
     NSUUID *session = [NSUUID UUID];
     self.requestedSession = session;
     NSString *deviceHost = [host copy];
@@ -108,7 +113,7 @@ static UIImage * _Nullable BKDecodeJPEG(NSData *data) {
         }
 
         [self closeStreamSendingStop:YES];
-        [self openStreamToHost:deviceHost session:session];
+        [self openStreamToHost:deviceHost w32Key:w32Key session:session];
     });
 }
 
@@ -121,7 +126,7 @@ static UIImage * _Nullable BKDecodeJPEG(NSData *data) {
 }
 
 // 先绑定临时本地端口并开启接收，再发送开流指令，避免错过首包。
-- (void)openStreamToHost:(NSString *)host session:(NSUUID *)session {
+- (void)openStreamToHost:(NSString *)host w32Key:(uint8_t)w32Key session:(NSUUID *)session {
     struct sockaddr_in peer = { 0 };
     peer.sin_len = sizeof(peer);
     peer.sin_family = AF_INET;
@@ -148,6 +153,7 @@ static UIImage * _Nullable BKDecodeJPEG(NSData *data) {
     self.socket = socket;
     self.peerAddress = [NSData dataWithBytes:&peer length:sizeof(peer)];
     self.peerIPv4 = peer.sin_addr.s_addr;
+    self.w32Key = w32Key;
     self.frameData = [NSMutableData data];
 
     NSData *command = [NSData dataWithBytes:BKUDPImageStartCommand length:sizeof(BKUDPImageStartCommand)];
@@ -205,7 +211,11 @@ withFilterContext:(id _Nullable)filterContext {
         [self.frameData setLength:0];
     }
 
+    NSUInteger payloadOffset = self.frameData.length;
     [self.frameData appendBytes:packet.payload length:packet.payloadLength];
+    uint8_t *frameBytes = self.frameData.mutableBytes;
+    BKUDPImageRestorePayload(frameBytes + payloadOffset, packet.payloadLength, packet.packetID, self.w32Key);
+
     if (packet.endsFrame) {
         self.pendingJPEG = [self.frameData copy];
         [self.frameData setLength:0];
@@ -292,6 +302,7 @@ didNotSendDataWithTag:(long)tag
     self.socket = nil;
     self.peerAddress = nil;
     self.activeSession = nil;
+    self.w32Key = 0;
     self.frameData = nil;
     self.pendingJPEG = nil;
     _frameState = (BKUDPImageFrameState){ 0 };

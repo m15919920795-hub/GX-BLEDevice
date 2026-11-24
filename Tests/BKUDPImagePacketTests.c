@@ -24,11 +24,11 @@ static void testContinuousPacketsPreserveJPEGBytes(void) {
     BKUDPImagePacket packet = { 0 };
 
     assert(BKUDPImageReadPacket(&state, first, sizeof(first), &packet) == BKUDPImagePacketAccepted);
-    assert(packet.startsFrame && !packet.endsFrame && packet.payloadLength == 3);
+    assert(packet.startsFrame && !packet.endsFrame && packet.payloadLength == 3 && packet.packetID == 1);
     memcpy(assembled, packet.payload, packet.payloadLength);
 
     assert(BKUDPImageReadPacket(&state, last, sizeof(last), &packet) == BKUDPImagePacketAccepted);
-    assert(!packet.startsFrame && packet.endsFrame && packet.payloadLength == 3);
+    assert(!packet.startsFrame && packet.endsFrame && packet.payloadLength == 3 && packet.packetID == 2);
     memcpy(assembled + 3, packet.payload, packet.payloadLength);
     assert(memcmp(assembled, expected, sizeof(expected)) == 0);
     assert(!state.receivingFrame);
@@ -83,12 +83,35 @@ static void testLastSequenceNumberCanOnlyFinishAFrame(void) {
     assert(readPacket(&state, &packet, 4, 0, 1) == BKUDPImagePacketIgnored);
 }
 
+static void testRestoreUsesPacketRelativeOffset(void) {
+    const uint8_t expected[] = { 0xff, 0xd8, 0x42, 0x11, 0x22, 0x33, 0xff, 0xd9 };
+    uint8_t assembled[] = { 0xff, 0xd8, 0x42, 0x11, 0x2b, 0x33, 0xff, 0xd9 };
+
+    // 第 2 包的载荷长 5 字节，key 为 9，修改的位置应是该包的第 2 个字节。
+    BKUDPImageRestorePayload(assembled + 3, 5, 2, 9);
+    assert(memcmp(assembled, expected, sizeof(expected)) == 0);
+}
+
+static void testRestoreWrapsShiftAndPreservesPlainPayload(void) {
+    const uint8_t expected[] = { 0x10, 0x20, 0x30, 0x40, 0x50 };
+    uint8_t payload[] = { 0x10, 0x20, 0x39, 0x40, 0x50 };
+
+    BKUDPImageRestorePayload(payload, sizeof(payload), 16, 9);
+    assert(memcmp(payload, expected, sizeof(expected)) == 0);
+
+    BKUDPImageRestorePayload(payload, sizeof(payload), 2, 0);
+    BKUDPImageRestorePayload(NULL, 0, 2, 9);
+    assert(memcmp(payload, expected, sizeof(expected)) == 0);
+}
+
 int main(void) {
     testContinuousPacketsPreserveJPEGBytes();
     testDuplicatesAndOtherFramesDoNotInterruptValidFrame();
     testMissingPacketDropsFrameAndNextFirstPacketResynchronizes();
     testShortAndHeaderOnlyPacketsAreIgnored();
     testLastSequenceNumberCanOnlyFinishAFrame();
+    testRestoreUsesPacketRelativeOffset();
+    testRestoreWrapsShiftAndPreservesPlainPayload();
     puts("PASS: UDP image packet assembly and recovery");
     return 0;
 }

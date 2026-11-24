@@ -33,10 +33,22 @@ BKUDPImagePacketResult BKUDPImageReadPacket(BKUDPImageFrameState *state,
 
     packet->payload = bytes + BKUDPImagePacketHeaderLength;
     packet->payloadLength = length - BKUDPImagePacketHeaderLength;
+    packet->packetID = packetID;
     packet->startsFrame = startsFrame;
     packet->endsFrame = endsFrame;
 
     state->nextPacketID += 1;
     state->receivingFrame = !endsFrame;
     return BKUDPImagePacketAccepted;
+}
+
+void BKUDPImageRestorePayload(uint8_t *payload, size_t payloadLength,
+                              uint8_t packetID, uint8_t w32Key) {
+    if (w32Key == 0 || payloadLength == 0) {
+        return;
+    }
+
+    // 偏移以当前包的载荷为起点计算，协议头和前面已拼好的 JPEG 字节不参与。
+    const size_t offset = ((0x03u << (packetID % 16u)) + w32Key) % payloadLength;
+    payload[offset] ^= w32Key;
 }

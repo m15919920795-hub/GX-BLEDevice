@@ -16,6 +16,7 @@ typedef struct {
 typedef struct {
     const uint8_t *payload;
     size_t payloadLength;
+    uint8_t packetID;
     bool startsFrame;
     bool endsFrame;
 } BKUDPImagePacket;
@@ -31,5 +32,9 @@ BKUDPImagePacketResult BKUDPImageReadPacket(BKUDPImageFrameState *state,
                                            const uint8_t *bytes,
                                            size_t length,
                                            BKUDPImagePacket *packet);
+
+// 按设备协议还原单个包的载荷，传 0 时保留原始字节。
+void BKUDPImageRestorePayload(uint8_t *payload, size_t payloadLength,
+                              uint8_t packetID, uint8_t w32Key);
 
 #endif
