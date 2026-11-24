@@ -7,14 +7,14 @@ FOUNDATION_EXPORT NSErrorDomain const GXWiFiErrorDomain;
 typedef NS_ENUM(NSInteger, GXWiFiErrorCode) {
     GXWiFiErrorJoinCancelled = 1,
     GXWiFiErrorJoinFailed,
-    GXWiFiErrorSSIDUnconfirmed,
+    GXWiFiErrorGatewayUnavailable,
 };
 
-typedef void (^GXWiFiConnectionCompletion)(NSError * _Nullable error);
+typedef void (^GXWiFiConnectionCompletion)(NSString * _Nullable gatewayAddress, NSError * _Nullable error);
 
 @interface GXWiFiConnector : NSObject
 
-// 在主线程申请加入开放热点，核对到目标 SSID 后返回成功。
+// 在主线程申请加入开放热点，返回当前 Wi-Fi 的 IPv4 网关。
 - (void)joinOpenNetworkWithSSID:(NSString *)ssid
                    completion:(GXWiFiConnectionCompletion)completion;
 

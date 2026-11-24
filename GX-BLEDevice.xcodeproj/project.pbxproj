@@ -18,6 +18,7 @@
 		A10000000000000000000109 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000211 /* NetworkExtension.framework */; };
 		A1000000000000000000010A /* CocoaAsyncSocket in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000902 /* CocoaAsyncSocket */; };
 		A1000000000000000000010B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000213 /* Assets.xcassets */; };
+		A1000000000000000000010C /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000214 /* Network.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		A10000000000000000000211 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		A10000000000000000000212 /* GX-BLEDevice.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GX-BLEDevice.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000213 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10000000000000000000214 /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +51,7 @@
 			files = (
 				A10000000000000000000108 /* CoreBluetooth.framework in Frameworks */,
 				A10000000000000000000109 /* NetworkExtension.framework in Frameworks */,
+				A1000000000000000000010C /* Network.framework in Frameworks */,
 				A1000000000000000000010A /* CocoaAsyncSocket in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -141,6 +144,7 @@
 			children = (
 				A10000000000000000000210 /* CoreBluetooth.framework */,
 				A10000000000000000000211 /* NetworkExtension.framework */,
+				A10000000000000000000214 /* Network.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";

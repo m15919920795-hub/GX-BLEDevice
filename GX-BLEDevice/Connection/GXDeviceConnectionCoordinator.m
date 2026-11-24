@@ -21,7 +21,7 @@
     return self;
 }
 
-// 串联蓝牙扫描与 Wi-Fi 加入。仅在 Wi-Fi 模块核对成功后交回目标 SSID。
+// 串联蓝牙扫描与 Wi-Fi 加入，最后把读到的网关地址交给首页。
 - (void)connectToNearestDeviceWithProgress:(GXDeviceConnectionProgress)progress
                                completion:(GXDeviceConnectionCompletion)completion {
     progress(@"正在搜索附近的设备…");
@@ -39,14 +39,7 @@
         }
 
         progress([NSString stringWithFormat:@"正在加入 %@…", ssid]);
-        [coordinator.wifiConnector joinOpenNetworkWithSSID:ssid completion:^(NSError * _Nullable joinError) {
-            if (joinError != nil) {
-                completion(nil, joinError);
-                return;
-            }
-
-            completion(ssid, nil);
-        }];
+        [coordinator.wifiConnector joinOpenNetworkWithSSID:ssid completion:completion];
     }];
 }
 

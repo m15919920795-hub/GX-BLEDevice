@@ -122,21 +122,22 @@
 
     [self.connectionCoordinator connectToNearestDeviceWithProgress:^(NSString *message) {
         weakSelf.statusLabel.text = message;
-    } completion:^(NSString * _Nullable ssid, NSError * _Nullable error) {
-        [weakSelf showResultWithSSID:ssid error:error];
+    } completion:^(NSString * _Nullable gatewayAddress, NSError * _Nullable error) {
+        [weakSelf showResultWithGatewayAddress:gatewayAddress error:error];
     }];
 }
 
-- (void)showResultWithSSID:(NSString * _Nullable)ssid error:(NSError * _Nullable)error {
+- (void)showResultWithGatewayAddress:(NSString * _Nullable)gatewayAddress
+                              error:(NSError * _Nullable)error {
     self.connectButton.enabled = YES;
 
     NSString *title;
     NSString *message;
     BOOL needsBluetoothPermission = NO;
 
-    if (ssid != nil) {
-        title = @"连接成功";
-        message = [NSString stringWithFormat:@"已连接到 %@", ssid];
+    if (gatewayAddress != nil) {
+        title = @"Wi-Fi 网关已读取";
+        message = [NSString stringWithFormat:@"当前 Wi-Fi 的网关 IP 是 %@", gatewayAddress];
     } else {
         title = @"连接未完成";
         message = error.localizedDescription ?: @"请重新搜索设备。";
@@ -148,12 +149,13 @@
                 title = @"需要蓝牙权限";
                 needsBluetoothPermission = YES;
             }
-        } else if ([error.domain isEqualToString:GXWiFiErrorDomain] && error.code == GXWiFiErrorSSIDUnconfirmed) {
-            title = @"连接状态待确认";
+        } else if ([error.domain isEqualToString:GXWiFiErrorDomain] &&
+                   error.code == GXWiFiErrorGatewayUnavailable) {
+            title = @"未读到 Wi-Fi 网关";
         }
     }
 
-    self.statusLabel.text = ssid != nil ? message : title;
+    self.statusLabel.text = gatewayAddress != nil ? message : title;
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
                                                                    message:message
                                                             preferredStyle:UIAlertControllerStyleAlert];
