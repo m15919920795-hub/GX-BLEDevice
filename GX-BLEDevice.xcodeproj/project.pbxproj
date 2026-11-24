@@ -19,6 +19,10 @@
 		A1000000000000000000010A /* CocoaAsyncSocket in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000902 /* CocoaAsyncSocket */; };
 		A1000000000000000000010B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000213 /* Assets.xcassets */; };
 		A1000000000000000000010C /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000214 /* Network.framework */; };
+		A1000000000000000000010D /* BKUDPImageManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000215 /* BKUDPImageManager.m */; };
+		A1000000000000000000010E /* BKUDPImagePacket.c in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000217 /* BKUDPImagePacket.c */; };
+		A1000000000000000000010F /* GXImagePreviewViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000219 /* GXImagePreviewViewController.m */; };
+		A10000000000000000000110 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1000000000000000000021B /* ImageIO.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +46,13 @@
 		A10000000000000000000212 /* GX-BLEDevice.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GX-BLEDevice.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000213 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000214 /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
+		A10000000000000000000215 /* BKUDPImageManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BKUDPImageManager.m; sourceTree = "<group>"; };
+		A10000000000000000000216 /* BKUDPImageManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BKUDPImageManager.h; sourceTree = "<group>"; };
+		A10000000000000000000217 /* BKUDPImagePacket.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BKUDPImagePacket.c; sourceTree = "<group>"; };
+		A10000000000000000000218 /* BKUDPImagePacket.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BKUDPImagePacket.h; sourceTree = "<group>"; };
+		A10000000000000000000219 /* GXImagePreviewViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GXImagePreviewViewController.m; sourceTree = "<group>"; };
+		A1000000000000000000021A /* GXImagePreviewViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GXImagePreviewViewController.h; sourceTree = "<group>"; };
+		A1000000000000000000021B /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +63,7 @@
 				A10000000000000000000108 /* CoreBluetooth.framework in Frameworks */,
 				A10000000000000000000109 /* NetworkExtension.framework in Frameworks */,
 				A1000000000000000000010C /* Network.framework in Frameworks */,
+				A10000000000000000000110 /* ImageIO.framework in Frameworks */,
 				A1000000000000000000010A /* CocoaAsyncSocket in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -75,6 +87,7 @@
 				A10000000000000000000404 /* Bluetooth */,
 				A10000000000000000000405 /* WiFi */,
 				A10000000000000000000406 /* Connection */,
+				A1000000000000000000040B /* UDPImage */,
 				A10000000000000000000407 /* UI */,
 				A10000000000000000000408 /* Resources */,
 			);
@@ -125,6 +138,8 @@
 			children = (
 				A1000000000000000000020D /* GXConnectionViewController.h */,
 				A1000000000000000000020C /* GXConnectionViewController.m */,
+				A1000000000000000000021A /* GXImagePreviewViewController.h */,
+				A10000000000000000000219 /* GXImagePreviewViewController.m */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -145,6 +160,7 @@
 				A10000000000000000000210 /* CoreBluetooth.framework */,
 				A10000000000000000000211 /* NetworkExtension.framework */,
 				A10000000000000000000214 /* Network.framework */,
+				A1000000000000000000021B /* ImageIO.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -155,6 +171,17 @@
 				A10000000000000000000212 /* GX-BLEDevice.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000040B /* UDPImage */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000216 /* BKUDPImageManager.h */,
+				A10000000000000000000215 /* BKUDPImageManager.m */,
+				A10000000000000000000218 /* BKUDPImagePacket.h */,
+				A10000000000000000000217 /* BKUDPImagePacket.c */,
+			);
+			path = UDPImage;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -246,6 +273,9 @@
 				A10000000000000000000105 /* GXWiFiConnector.m in Sources */,
 				A10000000000000000000106 /* GXDeviceConnectionCoordinator.m in Sources */,
 				A10000000000000000000107 /* GXConnectionViewController.m in Sources */,
+				A1000000000000000000010D /* BKUDPImageManager.m in Sources */,
+				A1000000000000000000010E /* BKUDPImagePacket.c in Sources */,
+				A1000000000000000000010F /* GXImagePreviewViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

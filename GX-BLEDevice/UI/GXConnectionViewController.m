@@ -2,6 +2,7 @@
 
 #import "GXBLEScanner.h"
 #import "GXDeviceConnectionCoordinator.h"
+#import "GXImagePreviewViewController.h"
 #import "GXWiFiConnector.h"
 
 @interface GXConnectionViewController ()
@@ -9,6 +10,8 @@
 @property (nonatomic, strong) GXDeviceConnectionCoordinator *connectionCoordinator;
 @property (nonatomic, strong) UILabel *statusLabel;
 @property (nonatomic, strong) UIButton *connectButton;
+@property (nonatomic, strong) UIButton *previewButton;
+@property (nonatomic, copy, nullable) NSString *gatewayAddress;
 @property (nonatomic, strong, nullable) UIAlertController *pendingAlert;
 
 @end
@@ -59,10 +62,23 @@
     self.connectButton.contentEdgeInsets = UIEdgeInsetsMake(10, 24, 10, 24);
     [self.connectButton.heightAnchor constraintGreaterThanOrEqualToConstant:44].active = YES;
 
+    self.previewButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.previewButton setTitle:@"查看图像" forState:UIControlStateNormal];
+    [self.previewButton addTarget:self
+                           action:@selector(previewButtonTapped:)
+                 forControlEvents:UIControlEventTouchUpInside];
+    self.previewButton.titleLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline];
+    self.previewButton.titleLabel.adjustsFontForContentSizeCategory = YES;
+    self.previewButton.hidden = YES;
+    NSLayoutConstraint *previewHeight = [self.previewButton.heightAnchor constraintGreaterThanOrEqualToConstant:44];
+    previewHeight.priority = UILayoutPriorityDefaultHigh;
+    previewHeight.active = YES;
+
     UIStackView *content = [[UIStackView alloc] initWithArrangedSubviews:@[
         titleLabel,
         self.statusLabel,
         self.connectButton,
+        self.previewButton,
     ]];
     content.translatesAutoresizingMaskIntoConstraints = NO;
     content.axis = UILayoutConstraintAxisVertical;
@@ -118,6 +134,8 @@
 // 本次连接结束前禁用按钮，防止重复启动扫描或重复弹出系统加入提示。
 - (void)connectButtonTapped:(UIButton *)sender {
     sender.enabled = NO;
+    self.gatewayAddress = nil;
+    self.previewButton.hidden = YES;
     __weak typeof(self) weakSelf = self;
 
     [self.connectionCoordinator connectToNearestDeviceWithProgress:^(NSString *message) {
@@ -127,9 +145,22 @@
     }];
 }
 
+- (void)previewButtonTapped:(UIButton *)sender {
+    NSString *host = self.gatewayAddress;
+    if (host == nil || self.presentedViewController != nil) {
+        return;
+    }
+
+    GXImagePreviewViewController *preview = [[GXImagePreviewViewController alloc] initWithHost:host];
+    preview.modalPresentationStyle = UIModalPresentationFullScreen;
+    [self presentViewController:preview animated:YES completion:nil];
+}
+
 - (void)showResultWithGatewayAddress:(NSString * _Nullable)gatewayAddress
                               error:(NSError * _Nullable)error {
     self.connectButton.enabled = YES;
+    self.gatewayAddress = gatewayAddress;
+    self.previewButton.hidden = gatewayAddress == nil;
 
     NSString *title;
     NSString *message;
