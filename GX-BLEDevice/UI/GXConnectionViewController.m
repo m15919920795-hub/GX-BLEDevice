@@ -16,6 +16,7 @@
 @property (nonatomic, strong, nullable) NSUUID *gatewayRefresh;
 @property (nonatomic, strong, nullable) BKUDPCommandManager *commandManager;
 @property (nonatomic, strong, nullable) UIAlertController *pendingAlert;
+@property (nonatomic) BOOL previewPending;
 
 @end
 
@@ -36,7 +37,7 @@
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    [self presentPendingAlert];
+    [self presentPendingResult];
     [self refreshConnectedDevice];
 }
 
@@ -168,28 +169,40 @@
     }
 }
 
-// 本次连接结束前禁用按钮，防止重复启动扫描或重复弹出系统加入提示。
+// 本次连接结束前禁用按钮，防止重复扫描。设备网关就绪后直接进入预览。
 - (void)connectButtonTapped:(UIButton *)sender {
     sender.enabled = NO;
     self.gatewayRefresh = nil;
+    self.previewPending = NO;
     [self updateConnectedGatewayAddress:nil];
     __weak typeof(self) weakSelf = self;
 
     [self.connectionCoordinator connectToNearestDeviceWithProgress:^(NSString *message) {
         weakSelf.statusLabel.text = message;
     } completion:^(NSString * _Nullable gatewayAddress, NSError * _Nullable error) {
-        [weakSelf showResultWithGatewayAddress:gatewayAddress error:error];
+        GXConnectionViewController *controller = weakSelf;
+        controller.connectButton.enabled = YES;
+        [controller updateConnectedGatewayAddress:gatewayAddress];
+        if (gatewayAddress != nil) {
+            [controller presentImagePreviewForHost:gatewayAddress];
+        } else {
+            [controller showConnectionError:error];
+        }
     }];
 }
 
 - (void)previewButtonTapped:(UIButton *)sender {
+    [self verifyGatewayAndOpenPreview];
+}
+
+- (void)verifyGatewayAndOpenPreview {
     if (self.gatewayAddress == nil || !self.connectButton.enabled || self.presentedViewController != nil) {
         return;
     }
 
     self.gatewayRefresh = nil;
     self.connectButton.enabled = NO;
-    sender.enabled = NO;
+    self.previewButton.enabled = NO;
     __weak typeof(self) weakSelf = self;
 
     // 以点击时读到的网关为准，避免用缓存地址向已经切换的网络取 Key。
@@ -209,12 +222,12 @@
 }
 
 - (void)presentImagePreviewForHost:(NSString *)host {
-    UIWindowScene *scene = self.view.window.windowScene;
-    if (scene == nil || scene.activationState != UISceneActivationStateForegroundActive ||
-        self.presentedViewController != nil) {
+    if (![self canPresentConnectionResult]) {
+        self.previewPending = YES;
         return;
     }
 
+    self.previewPending = NO;
     // 同一个设备复用指令实例，重新打开预览时仍遵守上次取 Key 的发送间隔。
     if (![self.commandManager.host isEqualToString:host]) {
         [self.commandManager close];
@@ -227,41 +240,27 @@
     [self presentViewController:preview animated:YES completion:nil];
 }
 
-- (void)showResultWithGatewayAddress:(NSString * _Nullable)gatewayAddress
-                              error:(NSError * _Nullable)error {
-    self.connectButton.enabled = YES;
-    [self updateConnectedGatewayAddress:gatewayAddress];
-
-    NSString *title;
-    NSString *message;
+- (void)showConnectionError:(NSError * _Nullable)error {
+    NSString *title = @"连接未完成";
+    NSString *message = error.localizedDescription ?: @"请重新搜索设备。";
     BOOL needsBluetoothPermission = NO;
 
-    if (gatewayAddress != nil) {
-        title = @"已连接设备 Wi-Fi";
-        message = [NSString stringWithFormat:@"当前 Wi-Fi 的网关 IP 是 %@", gatewayAddress];
-    } else {
-        title = @"连接未完成";
-        message = error.localizedDescription ?: @"请重新搜索设备。";
-
-        if ([error.domain isEqualToString:GXBLEScanErrorDomain]) {
-            if (error.code == GXBLEScanErrorPoweredOff) {
-                title = @"蓝牙未开启";
-            } else if (error.code == GXBLEScanErrorUnauthorized) {
-                title = @"需要蓝牙权限";
-                needsBluetoothPermission = YES;
-            }
-        } else if ([error.domain isEqualToString:GXWiFiErrorDomain] &&
-                   error.code == GXWiFiErrorGatewayUnavailable) {
-            title = @"未读到 Wi-Fi 网关";
-        } else if ([error.domain isEqualToString:GXWiFiErrorDomain] &&
-                   error.code == GXWiFiErrorUnexpectedGateway) {
-            title = @"设备网关不匹配";
+    if ([error.domain isEqualToString:GXBLEScanErrorDomain]) {
+        if (error.code == GXBLEScanErrorPoweredOff) {
+            title = @"蓝牙未开启";
+        } else if (error.code == GXBLEScanErrorUnauthorized) {
+            title = @"需要蓝牙权限";
+            needsBluetoothPermission = YES;
         }
+    } else if ([error.domain isEqualToString:GXWiFiErrorDomain] &&
+               error.code == GXWiFiErrorGatewayUnavailable) {
+        title = @"未读到 Wi-Fi 网关";
+    } else if ([error.domain isEqualToString:GXWiFiErrorDomain] &&
+               error.code == GXWiFiErrorUnexpectedGateway) {
+        title = @"设备网关不匹配";
     }
 
-    if (gatewayAddress == nil) {
-        self.statusLabel.text = title;
-    }
+    self.statusLabel.text = title;
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
                                                                    message:message
                                                             preferredStyle:UIAlertControllerStyleAlert];
@@ -276,30 +275,39 @@
 
     [alert addAction:[UIAlertAction actionWithTitle:@"知道了" style:UIAlertActionStyleCancel handler:nil]];
     self.pendingAlert = alert;
-    [self presentPendingAlert];
+    [self presentPendingResult];
 }
 
 - (void)sceneDidActivate:(NSNotification *)notification {
     if (notification.object == self.view.window.windowScene) {
-        [self presentPendingAlert];
+        [self presentPendingResult];
         [self refreshConnectedDevice];
     }
 }
 
-// 系统权限弹窗期间界面可能暂时失去焦点。回到前台后再展示本次连接结果。
-- (void)presentPendingAlert {
-    if (self.pendingAlert == nil || self.presentedViewController != nil) {
-        return;
-    }
-
+- (BOOL)canPresentConnectionResult {
     UIWindowScene *scene = self.view.window.windowScene;
-    if (scene == nil || scene.activationState != UISceneActivationStateForegroundActive) {
+    return scene != nil && scene.activationState == UISceneActivationStateForegroundActive
+        && self.presentedViewController == nil;
+}
+
+// Wi-Fi 系统弹窗期间可能无法展示页面，回到前台后再处理结果。
+- (void)presentPendingResult {
+    if (![self canPresentConnectionResult]) {
         return;
     }
 
     UIAlertController *alert = self.pendingAlert;
-    self.pendingAlert = nil;
-    [self presentViewController:alert animated:YES completion:nil];
+    if (alert != nil) {
+        self.pendingAlert = nil;
+        [self presentViewController:alert animated:YES completion:nil];
+        return;
+    }
+
+    if (self.previewPending && self.connectButton.enabled) {
+        self.previewPending = NO;
+        [self verifyGatewayAndOpenPreview];
+    }
 }
 
 @end

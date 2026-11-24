@@ -45,7 +45,7 @@
 - (void)configurePreview {
     self.imageView = [[UIImageView alloc] init];
     self.imageView.translatesAutoresizingMaskIntoConstraints = NO;
-    self.imageView.contentMode = UIViewContentModeScaleAspectFit;
+    self.imageView.contentMode = UIViewContentModeScaleToFill;
 
     UIButton *backButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [backButton setTitle:@"返回" forState:UIControlStateNormal];
@@ -78,21 +78,27 @@
     controls.axis = UILayoutConstraintAxisHorizontal;
     controls.alignment = UIStackViewAlignmentCenter;
     controls.spacing = 12;
+    controls.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.55];
 
     [self.view addSubview:self.imageView];
     [self.view addSubview:controls];
 
     UILayoutGuide *safeArea = self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
+        // 画面铺满整个视图，操作区叠在安全区域内。
+        [self.imageView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
+        [self.imageView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [self.imageView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [self.imageView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
         [controls.topAnchor constraintEqualToAnchor:safeArea.topAnchor],
         [controls.leadingAnchor constraintEqualToAnchor:safeArea.leadingAnchor constant:12],
         [controls.trailingAnchor constraintEqualToAnchor:safeArea.trailingAnchor constant:-12],
         [controls.heightAnchor constraintGreaterThanOrEqualToConstant:44],
-        [self.imageView.topAnchor constraintEqualToAnchor:controls.bottomAnchor],
-        [self.imageView.leadingAnchor constraintEqualToAnchor:safeArea.leadingAnchor],
-        [self.imageView.trailingAnchor constraintEqualToAnchor:safeArea.trailingAnchor],
-        [self.imageView.bottomAnchor constraintEqualToAnchor:safeArea.bottomAnchor],
     ]];
+}
+
+- (BOOL)prefersStatusBarHidden {
+    return YES;
 }
 
 - (void)viewDidAppear:(BOOL)animated {
