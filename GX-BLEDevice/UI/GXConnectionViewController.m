@@ -2,6 +2,7 @@
 
 #import "GXBLEScanner.h"
 #import "GXDeviceConnectionCoordinator.h"
+#import "GXWiFiConnector.h"
 
 @interface GXConnectionViewController ()
 
@@ -147,6 +148,8 @@
                 title = @"需要蓝牙权限";
                 needsBluetoothPermission = YES;
             }
+        } else if ([error.domain isEqualToString:GXWiFiErrorDomain] && error.code == GXWiFiErrorSSIDUnconfirmed) {
+            title = @"连接状态待确认";
         }
     }
 

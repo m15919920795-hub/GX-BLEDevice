@@ -2,6 +2,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+FOUNDATION_EXPORT NSErrorDomain const GXWiFiErrorDomain;
+
+typedef NS_ENUM(NSInteger, GXWiFiErrorCode) {
+    GXWiFiErrorJoinCancelled = 1,
+    GXWiFiErrorJoinFailed,
+    GXWiFiErrorSSIDUnconfirmed,
+};
+
 typedef void (^GXWiFiConnectionCompletion)(NSError * _Nullable error);
 
 @interface GXWiFiConnector : NSObject

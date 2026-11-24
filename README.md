@@ -13,7 +13,7 @@
 `GXConnectionViewController` 显示连接进度，`GXDeviceConnectionCoordinator` 串联两个步骤：
 
 1. `GXBLEScanner` 扫描约 3 秒，把以 `FPV-Drone-` 开头的完整 BLE 广播 Local Name 作为 SSID。按设备累计有效 RSSI，以中位数最高的设备为目标。蓝牙关闭与 App 无蓝牙权限分别提示。
-2. `GXWiFiConnector` 用完整 SSID 申请临时加入开放热点。收到系统回调后最多核对 8 秒，当前 SSID 完全匹配才显示成功。连接面向前台使用，锁屏、退出 App 或切换网络时，iOS 可能终止这次临时连接。
+2. `GXWiFiConnector` 用完整 SSID 申请临时加入开放热点。收到系统回调后最多核对 15 秒，当前 SSID 完全匹配才显示成功。超时时会区分系统未返回 Wi-Fi 名称和返回的名称不匹配。连接面向前台使用，锁屏、退出 App 或切换网络时，iOS 可能终止这次临时连接。
 
 ## 真机验收
 
