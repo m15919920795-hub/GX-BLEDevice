@@ -1,7 +1,8 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {};
+	classes = {
+	};
 	objectVersion = 56;
 	objects = {
 
@@ -163,8 +164,10 @@
 				A10000000000000000000302 /* Frameworks */,
 				A10000000000000000000303 /* Resources */,
 			);
-			buildRules = ();
-			dependencies = ();
+			buildRules = (
+			);
+			dependencies = (
+			);
 			name = "GX-BLEDevice";
 			packageProductDependencies = (
 				A10000000000000000000902 /* CocoaAsyncSocket */,
@@ -277,8 +280,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "GX-BLEDevice/Resources/GX-BLEDevice.entitlements";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Apple Development: Guan Zhi (JMMVE7P3A3)";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZGRXVL5577;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "GX-BLEDevice/Resources/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -288,6 +293,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gx.bledevice;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = GXBLEDeviceDevPF20261124;
 				SUPPORTS_MACCATALYST = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -298,8 +304,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "GX-BLEDevice/Resources/GX-BLEDevice.entitlements";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Apple Development: Guan Zhi (JMMVE7P3A3)";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZGRXVL5577;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "GX-BLEDevice/Resources/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -309,6 +317,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gx.bledevice;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = GXBLEDeviceDevPF20261124;
 				SUPPORTS_MACCATALYST = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
