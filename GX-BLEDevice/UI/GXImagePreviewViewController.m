@@ -2,6 +2,9 @@
 
 #import "BKUDPImageManager.h"
 
+// 使用当前设备的值验证出图，后续可在读取设备信息后传入。
+static const uint8_t GXPreviewW32Key = 254;
+
 @interface GXImagePreviewViewController () <BKUDPImageManagerDelegate>
 
 @property (nonatomic, copy) NSString *host;
@@ -134,7 +137,7 @@
     self.retryButton.hidden = YES;
     self.imageView.image = nil;
     self.statusLabel.text = [NSString stringWithFormat:@"正在等待 %@ 的图像…", self.host];
-    [self.imageManager startReceivingFromHost:self.host];
+    [self.imageManager startReceivingFromHost:self.host w32Key:GXPreviewW32Key];
 }
 
 - (void)udpImageManager:(BKUDPImageManager *)manager didReceiveImage:(UIImage *)image {

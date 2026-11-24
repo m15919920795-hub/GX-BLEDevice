@@ -85,10 +85,10 @@ static void testLastSequenceNumberCanOnlyFinishAFrame(void) {
 
 static void testRestoreUsesPacketRelativeOffset(void) {
     const uint8_t expected[] = { 0xff, 0xd8, 0x42, 0x11, 0x22, 0x33, 0xff, 0xd9 };
-    uint8_t assembled[] = { 0xff, 0xd8, 0x42, 0x11, 0x2b, 0x33, 0xff, 0xd9 };
+    uint8_t assembled[] = { 0xff, 0xd8, 0x42, 0x11, 0xdc, 0x33, 0xff, 0xd9 };
 
-    // 第 2 包的载荷长 5 字节，key 为 9，修改的位置应是该包的第 2 个字节。
-    BKUDPImageRestorePayload(assembled + 3, 5, 2, 9);
+    // 第 2 包的载荷长 5 字节，key 为 254，修改的位置应是该包的第 2 个字节。
+    BKUDPImageRestorePayload(assembled + 3, 5, 2, 254);
     assert(memcmp(assembled, expected, sizeof(expected)) == 0);
 }
 
