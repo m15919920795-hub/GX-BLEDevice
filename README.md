@@ -10,11 +10,12 @@
 
 ## 连接流程
 
-`GXConnectionViewController` 显示连接进度，`GXDeviceConnectionCoordinator` 串联两个步骤：
+`GXConnectionViewController` 显示连接进度，`GXDeviceConnectionCoordinator` 先检查当前联网状态。
 
-1. `GXBLEScanner` 扫描约 3 秒，把以 `FPV-Drone-` 开头的完整 BLE 广播 Local Name 作为 SSID。按设备累计有效 RSSI，以中位数最高的设备为目标。蓝牙关闭与 App 无蓝牙权限分别提示。
-2. `GXWiFiConnector` 用完整 SSID 申请临时加入开放热点。收到系统回调后，最多等 10 秒让路由更新，再显示当前 Wi-Fi 的 IPv4 网关。连接面向前台使用，锁屏、退出 App 或切换网络时，iOS 可能终止这次临时连接。
-3. 点「查看图像」后，先通过 UDP 7080 获取图像 Key，再由 `BKUDPImageManager` 通过 UDP 7070 接收 JPEG。首次进入时按系统提示允许本地网络访问。
+1. 首页和「搜索并连接」先读取当前 Wi-Fi 的 IPv4 网关。如果是 `192.168.18.1`，可直接点「查看图像」。
+2. 未连接设备时，`GXBLEScanner` 扫描约 3 秒，把以 `FPV-Drone-` 开头的完整 BLE 广播 Local Name 作为 SSID。按设备累计有效 RSSI，以中位数最高的设备为目标。蓝牙关闭与 App 无蓝牙权限分别提示。
+3. `GXWiFiConnector` 用完整 SSID 申请临时加入开放热点。收到系统回调后，最多等 10 秒让路由更新到设备网关。连接面向前台使用，锁屏、退出 App 或切换网络时，iOS 可能终止这次临时连接。
+4. 点「查看图像」后，再次确认网关是 `192.168.18.1`，通过 UDP 7080 获取图像 Key，再由 `BKUDPImageManager` 通过 UDP 7070 接收 JPEG。首次进入时按系统提示允许本地网络访问。
 
 ## UDP 指令
 
@@ -38,6 +39,7 @@
 ## 真机验收
 
 - 单台设备开机后，加入其热点，确认弹窗中的 IPv4 网关与 iPhone「设置 → Wi-Fi」里该网络的「路由器」地址一致。
+- 从 iPhone 设置先加入设备热点，等设备关闭蓝牙广播，再回到 App，确认首页直接出现「查看图像」。切到其他 Wi-Fi 后，确认需要重新连接设备。
 - 点击「查看图像」，确认取得 Key 后预览能收到 JPEG。确认同一次预览里重试时复用 Key，切到后台后回到首页，重新进入时先重新获取 Key。
 - 两台设备同时开机，把其中一台放在手机附近，检查是否选择 RSSI 更强的一台。
 - 在「设置 → 蓝牙」关闭蓝牙后搜索，确认弹出开启提示。开启蓝牙后返回 App 再试。

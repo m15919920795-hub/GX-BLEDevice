@@ -3,6 +3,8 @@
 #import "GXBLEScanner.h"
 #import "GXWiFiConnector.h"
 
+static NSString * const GXDeviceGatewayAddress = @"192.168.18.1";
+
 @interface GXDeviceConnectionCoordinator ()
 
 @property (nonatomic, strong) GXBLEScanner *scanner;
@@ -21,9 +23,30 @@
     return self;
 }
 
-// 串联蓝牙扫描与 Wi-Fi 加入，最后把读到的网关地址交给首页。
+- (void)readConnectedDeviceWithCompletion:(GXConnectedDeviceCompletion)completion {
+    [GXWiFiConnector readCurrentGatewayAddressWithCompletion:^(NSString * _Nullable gatewayAddress) {
+        completion([gatewayAddress isEqualToString:GXDeviceGatewayAddress] ? gatewayAddress : nil);
+    }];
+}
+
+// 设备加入 Wi-Fi 后会关闭蓝牙广播，先检查当前网关再决定是否扫描。
 - (void)connectToNearestDeviceWithProgress:(GXDeviceConnectionProgress)progress
                                completion:(GXDeviceConnectionCompletion)completion {
+    progress(@"正在检查设备 Wi-Fi…");
+    __weak typeof(self) weakSelf = self;
+
+    [self readConnectedDeviceWithCompletion:^(NSString * _Nullable gatewayAddress) {
+        if (gatewayAddress != nil) {
+            completion(gatewayAddress, nil);
+            return;
+        }
+
+        [weakSelf scanAndJoinWithProgress:progress completion:completion];
+    }];
+}
+
+- (void)scanAndJoinWithProgress:(GXDeviceConnectionProgress)progress
+                     completion:(GXDeviceConnectionCompletion)completion {
     progress(@"正在搜索附近的设备…");
     __weak typeof(self) weakSelf = self;
 
@@ -39,7 +62,9 @@
         }
 
         progress([NSString stringWithFormat:@"正在加入 %@…", ssid]);
-        [coordinator.wifiConnector joinOpenNetworkWithSSID:ssid completion:completion];
+        [coordinator.wifiConnector joinOpenNetworkWithSSID:ssid
+                                expectedGatewayAddress:GXDeviceGatewayAddress
+                                            completion:completion];
     }];
 }
 

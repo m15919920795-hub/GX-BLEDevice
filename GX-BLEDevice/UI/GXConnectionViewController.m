@@ -13,6 +13,7 @@
 @property (nonatomic, strong) UIButton *connectButton;
 @property (nonatomic, strong) UIButton *previewButton;
 @property (nonatomic, copy, nullable) NSString *gatewayAddress;
+@property (nonatomic, strong, nullable) NSUUID *gatewayRefresh;
 @property (nonatomic, strong, nullable) BKUDPCommandManager *commandManager;
 @property (nonatomic, strong, nullable) UIAlertController *pendingAlert;
 
@@ -36,6 +37,7 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     [self presentPendingAlert];
+    [self refreshConnectedDevice];
 }
 
 - (void)configureContent {
@@ -133,11 +135,44 @@
     preferredHeight.active = YES;
 }
 
+// 回到首页时重新读取网关，让已连设备的用户可以直接看图。
+- (void)refreshConnectedDevice {
+    if (self.gatewayRefresh != nil || !self.connectButton.enabled || self.presentedViewController != nil) {
+        return;
+    }
+
+    NSUUID *refresh = [NSUUID UUID];
+    self.gatewayRefresh = refresh;
+    __weak typeof(self) weakSelf = self;
+
+    [self.connectionCoordinator readConnectedDeviceWithCompletion:^(NSString * _Nullable gatewayAddress) {
+        GXConnectionViewController *controller = weakSelf;
+        if (controller.gatewayRefresh != refresh) {
+            return;
+        }
+
+        controller.gatewayRefresh = nil;
+        BOOL hadConnection = controller.gatewayAddress != nil;
+        [controller updateConnectedGatewayAddress:gatewayAddress];
+        if (hadConnection && gatewayAddress == nil) {
+            controller.statusLabel.text = @"设备 Wi-Fi 已断开，请重新连接。";
+        }
+    }];
+}
+
+- (void)updateConnectedGatewayAddress:(NSString * _Nullable)gatewayAddress {
+    self.gatewayAddress = gatewayAddress;
+    self.previewButton.hidden = gatewayAddress == nil;
+    if (gatewayAddress != nil) {
+        self.statusLabel.text = [NSString stringWithFormat:@"设备 Wi-Fi 已连接（%@）", gatewayAddress];
+    }
+}
+
 // 本次连接结束前禁用按钮，防止重复启动扫描或重复弹出系统加入提示。
 - (void)connectButtonTapped:(UIButton *)sender {
     sender.enabled = NO;
-    self.gatewayAddress = nil;
-    self.previewButton.hidden = YES;
+    self.gatewayRefresh = nil;
+    [self updateConnectedGatewayAddress:nil];
     __weak typeof(self) weakSelf = self;
 
     [self.connectionCoordinator connectToNearestDeviceWithProgress:^(NSString *message) {
@@ -148,8 +183,35 @@
 }
 
 - (void)previewButtonTapped:(UIButton *)sender {
-    NSString *host = self.gatewayAddress;
-    if (host == nil || self.presentedViewController != nil) {
+    if (self.gatewayAddress == nil || !self.connectButton.enabled || self.presentedViewController != nil) {
+        return;
+    }
+
+    self.gatewayRefresh = nil;
+    self.connectButton.enabled = NO;
+    sender.enabled = NO;
+    __weak typeof(self) weakSelf = self;
+
+    // 以点击时读到的网关为准，避免用缓存地址向已经切换的网络取 Key。
+    [self.connectionCoordinator readConnectedDeviceWithCompletion:^(NSString * _Nullable gatewayAddress) {
+        GXConnectionViewController *controller = weakSelf;
+        controller.connectButton.enabled = YES;
+        controller.previewButton.enabled = YES;
+        [controller updateConnectedGatewayAddress:gatewayAddress];
+
+        if (gatewayAddress == nil) {
+            controller.statusLabel.text = @"设备 Wi-Fi 已断开，请重新连接。";
+            return;
+        }
+
+        [controller presentImagePreviewForHost:gatewayAddress];
+    }];
+}
+
+- (void)presentImagePreviewForHost:(NSString *)host {
+    UIWindowScene *scene = self.view.window.windowScene;
+    if (scene == nil || scene.activationState != UISceneActivationStateForegroundActive ||
+        self.presentedViewController != nil) {
         return;
     }
 
@@ -168,15 +230,14 @@
 - (void)showResultWithGatewayAddress:(NSString * _Nullable)gatewayAddress
                               error:(NSError * _Nullable)error {
     self.connectButton.enabled = YES;
-    self.gatewayAddress = gatewayAddress;
-    self.previewButton.hidden = gatewayAddress == nil;
+    [self updateConnectedGatewayAddress:gatewayAddress];
 
     NSString *title;
     NSString *message;
     BOOL needsBluetoothPermission = NO;
 
     if (gatewayAddress != nil) {
-        title = @"Wi-Fi 网关已读取";
+        title = @"已连接设备 Wi-Fi";
         message = [NSString stringWithFormat:@"当前 Wi-Fi 的网关 IP 是 %@", gatewayAddress];
     } else {
         title = @"连接未完成";
@@ -192,10 +253,15 @@
         } else if ([error.domain isEqualToString:GXWiFiErrorDomain] &&
                    error.code == GXWiFiErrorGatewayUnavailable) {
             title = @"未读到 Wi-Fi 网关";
+        } else if ([error.domain isEqualToString:GXWiFiErrorDomain] &&
+                   error.code == GXWiFiErrorUnexpectedGateway) {
+            title = @"设备网关不匹配";
         }
     }
 
-    self.statusLabel.text = gatewayAddress != nil ? message : title;
+    if (gatewayAddress == nil) {
+        self.statusLabel.text = title;
+    }
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
                                                                    message:message
                                                             preferredStyle:UIAlertControllerStyleAlert];
@@ -216,6 +282,7 @@
 - (void)sceneDidActivate:(NSNotification *)notification {
     if (notification.object == self.view.window.windowScene) {
         [self presentPendingAlert];
+        [self refreshConnectedDevice];
     }
 }
 

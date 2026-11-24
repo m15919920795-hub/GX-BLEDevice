@@ -4,8 +4,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 typedef void (^GXDeviceConnectionProgress)(NSString *message);
 typedef void (^GXDeviceConnectionCompletion)(NSString * _Nullable gatewayAddress, NSError * _Nullable error);
+typedef void (^GXConnectedDeviceCompletion)(NSString * _Nullable gatewayAddress);
 
 @interface GXDeviceConnectionCoordinator : NSObject
+
+- (void)readConnectedDeviceWithCompletion:(GXConnectedDeviceCompletion)completion;
 
 - (void)connectToNearestDeviceWithProgress:(GXDeviceConnectionProgress)progress
                                completion:(GXDeviceConnectionCompletion)completion;
