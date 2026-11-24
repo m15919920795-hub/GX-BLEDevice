@@ -1,5 +1,6 @@
 #import "GXConnectionViewController.h"
 
+#import "BKUDPCommandManager.h"
 #import "GXBLEScanner.h"
 #import "GXDeviceConnectionCoordinator.h"
 #import "GXImagePreviewViewController.h"
@@ -12,6 +13,7 @@
 @property (nonatomic, strong) UIButton *connectButton;
 @property (nonatomic, strong) UIButton *previewButton;
 @property (nonatomic, copy, nullable) NSString *gatewayAddress;
+@property (nonatomic, strong, nullable) BKUDPCommandManager *commandManager;
 @property (nonatomic, strong, nullable) UIAlertController *pendingAlert;
 
 @end
@@ -151,7 +153,14 @@
         return;
     }
 
-    GXImagePreviewViewController *preview = [[GXImagePreviewViewController alloc] initWithHost:host];
+    // 同一个设备复用指令实例，重新打开预览时仍遵守上次取 Key 的发送间隔。
+    if (![self.commandManager.host isEqualToString:host]) {
+        [self.commandManager close];
+        self.commandManager = [[BKUDPCommandManager alloc] initWithHost:host];
+    }
+
+    GXImagePreviewViewController *preview =
+        [[GXImagePreviewViewController alloc] initWithCommandManager:self.commandManager];
     preview.modalPresentationStyle = UIModalPresentationFullScreen;
     [self presentViewController:preview animated:YES completion:nil];
 }

@@ -23,6 +23,8 @@ NS_ASSUME_NONNULL_BEGIN
 // 带字节处理的设备在开流时传入 w32Key，每个包按自己的序号还原。
 - (void)startReceivingFromHost:(NSString *)host w32Key:(uint8_t)w32Key;
 - (void)stopReceiving;
+// 停流数据报的发送队列处理完并关闭套接字后，在主线程回调。
+- (void)stopReceivingWithCompletion:(nullable dispatch_block_t)completion;
 
 @end
 

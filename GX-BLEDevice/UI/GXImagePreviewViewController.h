@@ -2,9 +2,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class BKUDPCommandManager;
+
 @interface GXImagePreviewViewController : UIViewController
 
-- (instancetype)initWithHost:(NSString *)host;
+- (instancetype)initWithCommandManager:(BKUDPCommandManager *)commandManager;
 
 @end
 

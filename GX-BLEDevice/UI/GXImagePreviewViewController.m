@@ -1,27 +1,27 @@
 #import "GXImagePreviewViewController.h"
 
+#import "BKUDPCommandManager.h"
 #import "BKUDPImageManager.h"
-
-// 使用当前设备的值验证出图，后续可在读取设备信息后传入。
-static const uint8_t GXPreviewW32Key = 254;
 
 @interface GXImagePreviewViewController () <BKUDPImageManagerDelegate>
 
-@property (nonatomic, copy) NSString *host;
+@property (nonatomic, strong) BKUDPCommandManager *commandManager;
+@property (nonatomic, strong, nullable) NSUUID *previewRequest;
+@property (nonatomic, strong, nullable) NSNumber *imageKey;
 @property (nonatomic, strong) BKUDPImageManager *imageManager;
 @property (nonatomic, strong) UIImageView *imageView;
 @property (nonatomic, strong) UILabel *statusLabel;
 @property (nonatomic, strong) UIButton *retryButton;
-@property (nonatomic) BOOL shouldResumeStream;
+@property (nonatomic) BOOL exitingPreview;
 
 @end
 
 @implementation GXImagePreviewViewController
 
-- (instancetype)initWithHost:(NSString *)host {
+- (instancetype)initWithCommandManager:(BKUDPCommandManager *)commandManager {
     self = [super initWithNibName:nil bundle:nil];
     if (self != nil) {
-        _host = [host copy];
+        _commandManager = commandManager;
     }
     return self;
 }
@@ -39,10 +39,6 @@ static const uint8_t GXPreviewW32Key = 254;
     [notifications addObserver:self
                        selector:@selector(sceneDidEnterBackground:)
                            name:UISceneDidEnterBackgroundNotification
-                         object:nil];
-    [notifications addObserver:self
-                       selector:@selector(sceneDidActivate:)
-                           name:UISceneDidActivateNotification
                          object:nil];
 }
 
@@ -101,31 +97,39 @@ static const uint8_t GXPreviewW32Key = 254;
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    [self startReceiving];
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
-    self.shouldResumeStream = NO;
-    [self.imageManager stopReceiving];
-}
-
-// App 真正进入后台时停流，回到预览页时重新请求图像。
-- (void)sceneDidEnterBackground:(NSNotification *)notification {
-    if (notification.object == self.view.window.windowScene) {
-        self.shouldResumeStream = YES;
-        [self.imageManager stopReceiving];
-    }
-}
-
-- (void)sceneDidActivate:(NSNotification *)notification {
-    if (self.shouldResumeStream && notification.object == self.view.window.windowScene) {
+    if (self.previewRequest == nil) {
         [self startReceiving];
     }
 }
 
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    [self stopPreviewWithCompletion:nil];
+}
+
+// App 进入后台时结束本次预览。回来后由用户重新打开预览。
+- (void)sceneDidEnterBackground:(NSNotification *)notification {
+    if (notification.object == self.view.window.windowScene) {
+        [self exitPreviewAnimated:NO];
+    }
+}
+
 - (void)backButtonTapped:(UIButton *)sender {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    sender.enabled = NO;
+    [self exitPreviewAnimated:YES];
+}
+
+- (void)exitPreviewAnimated:(BOOL)animated {
+    if (self.exitingPreview) {
+        return;
+    }
+
+    self.exitingPreview = YES;
+    self.imageKey = nil;
+    __weak typeof(self) weakSelf = self;
+    [self stopPreviewWithCompletion:^{
+        [weakSelf dismissViewControllerAnimated:animated completion:nil];
+    }];
 }
 
 - (void)retryButtonTapped:(UIButton *)sender {
@@ -133,11 +137,64 @@ static const uint8_t GXPreviewW32Key = 254;
 }
 
 - (void)startReceiving {
-    self.shouldResumeStream = NO;
+    if (self.exitingPreview) {
+        return;
+    }
+
     self.retryButton.hidden = YES;
     self.imageView.image = nil;
-    self.statusLabel.text = [NSString stringWithFormat:@"正在等待 %@ 的图像…", self.host];
-    [self.imageManager startReceivingFromHost:self.host w32Key:GXPreviewW32Key];
+    self.statusLabel.text = self.imageKey == nil ? @"正在获取设备 Key…" : @"正在准备图像…";
+
+    NSUUID *request = [NSUUID UUID];
+    self.previewRequest = request;
+    __weak typeof(self) weakSelf = self;
+
+    // 固件开流期间可能忽略取 Key 指令。先等停流指令处理完，再开始获取。
+    [self.imageManager stopReceivingWithCompletion:^{
+        GXImagePreviewViewController *preview = weakSelf;
+        if (preview.previewRequest != request) {
+            return;
+        }
+
+        NSNumber *imageKey = preview.imageKey;
+        if (imageKey != nil) {
+            [preview openImageStreamWithKey:imageKey.unsignedCharValue];
+        } else {
+            [preview requestKeyForPreview:request];
+        }
+    }];
+}
+
+- (void)requestKeyForPreview:(NSUUID *)request {
+    __weak typeof(self) weakSelf = self;
+    [self.commandManager requestImageKeyWithCompletion:^(uint8_t w32Key, NSError * _Nullable error) {
+        GXImagePreviewViewController *preview = weakSelf;
+        if (preview.previewRequest != request) {
+            return;
+        }
+
+        if (error != nil) {
+            preview.statusLabel.text = error.localizedDescription;
+            preview.retryButton.hidden = NO;
+            return;
+        }
+
+        // 同一次预览缓存已取得的 Key，图像重试时复用。
+        preview.imageKey = @(w32Key);
+        [preview openImageStreamWithKey:w32Key];
+    }];
+}
+
+- (void)openImageStreamWithKey:(uint8_t)w32Key {
+    NSString *host = self.commandManager.host;
+    self.statusLabel.text = [NSString stringWithFormat:@"正在等待 %@ 的图像…", host];
+    [self.imageManager startReceivingFromHost:host w32Key:w32Key];
+}
+
+- (void)stopPreviewWithCompletion:(dispatch_block_t _Nullable)completion {
+    self.previewRequest = nil;
+    [self.commandManager close];
+    [self.imageManager stopReceivingWithCompletion:completion];
 }
 
 - (void)udpImageManager:(BKUDPImageManager *)manager didReceiveImage:(UIImage *)image {

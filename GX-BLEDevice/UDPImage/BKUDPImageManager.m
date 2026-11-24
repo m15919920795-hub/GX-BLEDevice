@@ -75,6 +75,8 @@ static UIImage * _Nullable BKDecodeJPEG(NSData *data) {
 @property (atomic, strong, nullable) NSUUID *requestedSession;
 @property (nonatomic, strong, nullable) NSUUID *activeSession;
 @property (nonatomic, strong, nullable) GCDAsyncUdpSocket *socket;
+@property (nonatomic, strong) NSMutableSet<GCDAsyncUdpSocket *> *stoppingSockets;
+@property (nonatomic, strong) NSMutableArray<dispatch_block_t> *stopCompletions;
 @property (nonatomic, strong, nullable) NSData *peerAddress;
 @property (nonatomic) in_addr_t peerIPv4;
 @property (nonatomic) uint8_t w32Key;
@@ -94,6 +96,8 @@ static UIImage * _Nullable BKDecodeJPEG(NSData *data) {
         _receiveQueue = dispatch_queue_create("com.gx.udp-image.receive", DISPATCH_QUEUE_SERIAL);
         _socketQueue = dispatch_queue_create("com.gx.udp-image.socket", DISPATCH_QUEUE_SERIAL);
         _decodeQueue = dispatch_queue_create("com.gx.udp-image.decode", DISPATCH_QUEUE_SERIAL);
+        _stoppingSockets = [NSMutableSet set];
+        _stopCompletions = [NSMutableArray array];
     }
     return self;
 }
@@ -118,10 +122,18 @@ static UIImage * _Nullable BKDecodeJPEG(NSData *data) {
 }
 
 - (void)stopReceiving {
+    [self stopReceivingWithCompletion:nil];
+}
+
+- (void)stopReceivingWithCompletion:(dispatch_block_t _Nullable)completion {
     self.requestedSession = nil;
 
     dispatch_async(self.receiveQueue, ^{
+        if (completion != nil) {
+            [self.stopCompletions addObject:[completion copy]];
+        }
         [self closeStreamSendingStop:YES];
+        [self completeStopWhenReady];
     });
 }
 
@@ -274,9 +286,29 @@ didNotSendDataWithTag:(long)tag
 }
 
 - (void)udpSocketDidClose:(GCDAsyncUdpSocket *)socket withError:(NSError * _Nullable)error {
+    if ([self.stoppingSockets containsObject:socket]) {
+        [self.stoppingSockets removeObject:socket];
+        [self completeStopWhenReady];
+        return;
+    }
+
     if (socket == self.socket) {
         [self endStreamWithError:BKUDPImageError(@"UDP 接收已结束，请重试。") sendStop:NO];
     }
+}
+
+- (void)completeStopWhenReady {
+    if (self.stoppingSockets.count != 0 || self.stopCompletions.count == 0) {
+        return;
+    }
+
+    NSArray<dispatch_block_t> *completions = self.stopCompletions.copy;
+    [self.stopCompletions removeAllObjects];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        for (dispatch_block_t completion in completions) {
+            completion();
+        }
+    });
 }
 
 - (void)endStreamWithError:(NSError *)error sendStop:(BOOL)sendStop {
@@ -314,6 +346,7 @@ didNotSendDataWithTag:(long)tag
     }
 
     if (sendStop) {
+        [self.stoppingSockets addObject:socket];
         NSData *command = [NSData dataWithBytes:BKUDPImageStopCommand length:sizeof(BKUDPImageStopCommand)];
         [socket pauseReceiving];
         [socket sendData:command toAddress:peerAddress withTimeout:BKUDPCommandTimeout tag:BKUDPImageStopTag];
